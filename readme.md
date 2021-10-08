@@ -13,7 +13,7 @@ experimental:
   plugins:
     pathauth:
       moduleName: "github.com/nilskohrs/pathauth"
-      version: "xxxxx"
+      version: "v0.1.1"
 ```
 
 ### Dynamic
@@ -28,7 +28,8 @@ http:
           name: "X-Forwarded-User"
           delimiter: "," # the delimiter is useful if the input header has multiple values, for example roles. We can then check if the request meets any of the values from the headers. optional
         authorization:
-          - path: ".*/admin/.*"
+          - path: ".*/admin/.*" # regex
+            host: "^example.com$" # regex, optional
             method: # http methods which this rule matches with. optional, default = all methods
               - POST
             allowed: 
@@ -44,6 +45,6 @@ http:
 Authorization rules are being processed in ascending order of their assigned priority. Using overlapping authorization rules with the same priority should be avoided as there is no guarantee in which order rules with the same priority will be processed.
 
 ### Authorization requirements
-* A request will only be declined, by way of a 403 response, when an authentication rule matches on path and method but not on the allowed parameter.
-* If a request does match to path, method and allowed parameter it will directly be allowed. 
-* If a request does not match on path and method with any of the authorization rules then the request will be allowed.
+* A request will only be declined, by way of a 403 response, when an authentication rule matches on path, method and host but not on the allowed parameter.
+* If a request does match to path, method, host and allowed parameter it will directly be allowed. 
+* If a request does not match on path, method and host with any of the authorization rules then the request will be allowed.

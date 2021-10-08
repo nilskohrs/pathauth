@@ -26,6 +26,7 @@ type Source struct {
 // Authorization is part of the plugin config.
 type Authorization struct {
 	Path     string   `json:"path,omitempty"`
+	Host     string   `json:"host,omitempty"`
 	Priority int      `json:"priority,omitempty"`
 	Allowed  []string `json:"allowed,omitempty"`
 	Method   []string `json:"method,omitempty"`
@@ -33,6 +34,7 @@ type Authorization struct {
 
 type rule struct {
 	path     *regexp.Regexp
+	host     *regexp.Regexp
 	allowed  map[string]struct{}
 	priority int
 	method   map[string]struct{}
@@ -84,8 +86,13 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		if len(authorization.Allowed) == 0 {
 			return nil, fmt.Errorf("a authorization rule has not specified who is allowed")
 		}
+		var host *regexp.Regexp
+		if authorization.Host != "" {
+			host = regexp.MustCompile(authorization.Host)
+		}
 		plugin.rules = append(plugin.rules, rule{
 			path:     regexp.MustCompile(authorization.Path),
+			host:     host,
 			allowed:  asMapStruct(authorization.Allowed, false),
 			priority: authorization.Priority,
 			method:   asMapStruct(authorization.Method, true),
@@ -102,7 +109,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	roles := c.getRolesFromHeader(req.Header)
 	for _, rule := range c.rules {
-		if _, ok := rule.method[req.Method]; (len(rule.method) == 0 || ok) && rule.path.MatchString(req.URL.Path) {
+		if _, ok := rule.method[req.Method]; (len(rule.method) == 0 || ok) && rule.path.MatchString(req.URL.Path) && (rule.host == nil || rule.host.MatchString(req.URL.Hostname())) {
 			if !anyIn(roles, rule.allowed) {
 				reject(rw)
 				return
