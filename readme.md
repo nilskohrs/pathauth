@@ -1,5 +1,5 @@
 # Pathauth
-Pathauth is a middleware plugin for [Traefik](https://github.com/traefik/traefik) to apply more detailed authorization to multiple endpoints at once. This plugin was developed to work well together with [Traefik Enterprise OpenId Connection Authentication Middleware](https://doc.traefik.io/traefik-enterprise/middlewares/oidc) and [thomseddon traefik-forward-auth](https://github.com/thomseddon/traefik-forward-auth)
+Pathauth is a middleware plugin to apply more detailed authorization to multiple endpoints at once. This plugin was developed to work well together with [Traefik Enterprise OpenId Connection Authentication Middleware](https://doc.traefik.io/traefik-enterprise/middlewares/oidc) and [thomseddon traefik-forward-auth](https://github.com/thomseddon/traefik-forward-auth)
 
 ## Configuration
 
