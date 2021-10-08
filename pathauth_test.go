@@ -25,7 +25,7 @@ func TestShouldAllowUser(t *testing.T) {
 		Path:     ".*/admin/health",
 		Priority: 0,
 		Allowed:  []string{"monitoring"},
-		Method: []string{"Get"},
+		Method:   []string{"Get"},
 	})
 
 	ctx := context.Background()
