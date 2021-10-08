@@ -3,7 +3,7 @@ type: middleware
 
 import: github.com/nilskohrs/pathauth
 
-summary: "Pathauth is a middleware plugin for [Traefik](https://github.com/traefik/traefik) to apply more detailed authorization to multiple endpoints at once. This plugin was developed to work well together with Traefik Enterprise OpenId Connection Authentication Middleware and thomseddon traefik-forward-auth"
+summary: "Pathauth is a middleware plugin to apply more detailed authorization to multiple endpoints at once. This plugin was developed to work well together with Traefik Enterprise OpenId Connection Authentication Middleware and thomseddon traefik-forward-auth"
 
 testData:
   source:
