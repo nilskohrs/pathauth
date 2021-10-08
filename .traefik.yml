@@ -1,0 +1,10 @@
+displayName: Authorization on paths
+type: middleware
+
+import: github.com/nilskohrs/pathauth
+
+summary: 'Authorization on paths'
+
+testData:
+  cookies:
+    - cookieName
