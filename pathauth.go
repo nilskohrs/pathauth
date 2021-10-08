@@ -104,12 +104,21 @@ func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 	for _, rule := range c.rules {
 		if _, ok := rule.method[req.Method]; (len(rule.method) == 0 || ok) && rule.path.MatchString(req.URL.Path) {
 			if !anyIn(roles, rule.allowed) {
-				rw.WriteHeader(403)
+				reject(rw)
+				return
 			}
 			break
 		}
 	}
 	c.next.ServeHTTP(rw, req)
+}
+
+func reject(rw http.ResponseWriter) {
+	rw.WriteHeader(http.StatusForbidden)
+	_, err := rw.Write([]byte(http.StatusText(http.StatusForbidden)))
+	if err != nil {
+		fmt.Printf("unexpected error while writing statuscode: %v", err)
+	}
 }
 
 func anyIn(roles []string, allowed map[string]struct{}) bool {
