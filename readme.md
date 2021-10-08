@@ -13,7 +13,7 @@ experimental:
   plugins:
     pathauth:
       moduleName: "github.com/nilskohrs/pathauth"
-      version: "v0.1.1"
+      version: "v0.1.0"
 ```
 
 ### Dynamic
