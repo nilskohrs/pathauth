@@ -108,8 +108,9 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 
 func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	roles := c.getRolesFromHeader(req.Header)
+	hostname := hostname(req)
 	for _, rule := range c.rules {
-		if _, ok := rule.method[req.Method]; (len(rule.method) == 0 || ok) && rule.path.MatchString(req.URL.Path) && (rule.host == nil || rule.host.MatchString(req.URL.Hostname())) {
+		if _, ok := rule.method[req.Method]; (len(rule.method) == 0 || ok) && rule.path.MatchString(req.URL.Path) && (rule.host == nil || rule.host.MatchString(hostname)) {
 			if !anyIn(roles, rule.allowed) {
 				reject(rw)
 				return
@@ -120,6 +121,19 @@ func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 	c.next.ServeHTTP(rw, req)
 }
 
+func hostname(req *http.Request) (host string) {
+	host = req.URL.Hostname()
+	colon := strings.LastIndexByte(host, ':')
+	if colon != -1 {
+		host = host[:colon]
+	}
+
+	if strings.HasPrefix(host, "[") && strings.HasSuffix(host, "]") {
+		host = host[1 : len(host)-1]
+	}
+	return
+}
+
 func reject(rw http.ResponseWriter) {
 	rw.WriteHeader(http.StatusForbidden)
 	_, err := rw.Write([]byte(http.StatusText(http.StatusForbidden)))
@@ -128,13 +142,13 @@ func reject(rw http.ResponseWriter) {
 	}
 }
 
-func anyIn(roles []string, allowed map[string]struct{}) bool {
+func anyIn(roles []string, allowed map[string]struct{}) (ok bool) {
 	for _, role := range roles {
-		if _, ok := allowed[role]; ok {
-			return true
+		if _, ok = allowed[role]; ok {
+			return
 		}
 	}
-	return false
+	return
 }
 
 func (c *PathAuthorization) getRolesFromHeader(headers http.Header) []string {
