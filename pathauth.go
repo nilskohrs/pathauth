@@ -122,7 +122,7 @@ func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 }
 
 func hostname(req *http.Request) (host string) {
-	host = req.URL.Hostname()
+	host = req.Host
 	colon := strings.LastIndexByte(host, ':')
 	if colon != -1 {
 		host = host[:colon]
