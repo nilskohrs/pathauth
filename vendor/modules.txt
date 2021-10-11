@@ -1,0 +1,7 @@
+# github.com/gorilla/context v1.1.1
+## explicit
+github.com/gorilla/context
+# github.com/gorilla/mux v1.7.3 => github.com/containous/mux v0.0.0-20181024131434-c33f32e26898
+## explicit
+github.com/gorilla/mux
+# github.com/gorilla/mux => github.com/containous/mux v0.0.0-20181024131434-c33f32e26898
