@@ -1,0 +1,58 @@
+# github.com/containous/alice v0.0.0-20181107144136-d83ebdd94cbd
+## explicit
+github.com/containous/alice
+# github.com/gorilla/context v1.1.1
+## explicit
+github.com/gorilla/context
+# github.com/gorilla/mux v1.7.3 => github.com/containous/mux v0.0.0-20181024131434-c33f32e26898
+## explicit
+github.com/gorilla/mux
+# github.com/gravitational/trace v0.0.0-20190726142706-a535a178675f
+## explicit
+github.com/gravitational/trace
+# github.com/jonboulle/clockwork v0.1.0
+## explicit
+github.com/jonboulle/clockwork
+# github.com/miekg/dns v1.1.43
+## explicit; go 1.14
+github.com/miekg/dns
+# github.com/patrickmn/go-cache v2.1.0+incompatible
+## explicit
+github.com/patrickmn/go-cache
+# github.com/sirupsen/logrus v1.7.0
+## explicit; go 1.13
+github.com/sirupsen/logrus
+# github.com/traefik/paerser v0.1.4
+## explicit; go 1.15
+github.com/traefik/paerser/types
+# github.com/traefik/traefik/v2 v2.5.3
+## explicit; go 1.16
+github.com/traefik/traefik/v2/pkg/ip
+github.com/traefik/traefik/v2/pkg/log
+github.com/traefik/traefik/v2/pkg/middlewares/requestdecorator
+github.com/traefik/traefik/v2/pkg/rules
+github.com/traefik/traefik/v2/pkg/types
+# github.com/vulcand/predicate v1.1.0
+## explicit
+github.com/vulcand/predicate
+# golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+## explicit; go 1.17
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
+## explicit; go 1.11
+golang.org/x/net/bpf
+golang.org/x/net/context
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
+# golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
+## explicit; go 1.17
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/plan9
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d
+## explicit; go 1.11
+golang.org/x/term
+# github.com/gorilla/mux => github.com/containous/mux v0.0.0-20181024131434-c33f32e26898
