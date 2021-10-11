@@ -16,15 +16,15 @@ func TestShouldAllowUser(t *testing.T) {
 	cfg.Source.Delimiter = ","
 
 	cfg.Authorization = append(cfg.Authorization, pathauth.Authorization{
-		Path:     ".*/admin/.*",
-		Priority: 1,
+		Path:     []string{".*/admin/.*"},
+		Priority: 10,
 		Allowed:  []string{"admin"},
 	})
 
 	cfg.Authorization = append(cfg.Authorization, pathauth.Authorization{
-		Path:     ".*/admin/health",
-		Host:     "localhost",
-		Priority: 0,
+		Path:     []string{".*/admin/health"},
+		Host:     []string{"localhost"},
+		Priority: 1,
 		Allowed:  []string{"monitoring"},
 		Method:   []string{"Get"},
 	})

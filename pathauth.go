@@ -25,8 +25,8 @@ type Source struct {
 
 // Authorization is part of the plugin config.
 type Authorization struct {
-	Path     string   `json:"path,omitempty"`
-	Host     string   `json:"host,omitempty"`
+	Path     []string `json:"path,omitempty"`
+	Host     []string `json:"host,omitempty"`
 	Priority int      `json:"priority,omitempty"`
 	Allowed  []string `json:"allowed,omitempty"`
 	Method   []string `json:"method,omitempty"`
@@ -80,30 +80,47 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	}
 
 	for _, authorization := range config.Authorization {
-		if authorization.Path == "" {
+		if len(authorization.Path) == 0 {
 			return nil, fmt.Errorf("a authorization rule is missing a path")
 		}
 		if len(authorization.Allowed) == 0 {
 			return nil, fmt.Errorf("a authorization rule has not specified who is allowed")
 		}
-		var host *regexp.Regexp
-		if authorization.Host != "" {
-			host = regexp.MustCompile(authorization.Host)
+		allowed := asMapStruct(authorization.Allowed, false)
+		method := asMapStruct(authorization.Method, true)
+
+		hostRegex := make(map[int]*regexp.Regexp, len(authorization.Host))
+		for i, host := range authorization.Host {
+			hostRegex[i] = regexp.MustCompile(host)
 		}
-		plugin.rules = append(plugin.rules, rule{
-			path:     regexp.MustCompile(authorization.Path),
-			host:     host,
-			allowed:  asMapStruct(authorization.Allowed, false),
-			priority: authorization.Priority,
-			method:   asMapStruct(authorization.Method, true),
-		})
+
+		for _, path := range authorization.Path {
+			pathRegex := regexp.MustCompile(path)
+			if len(authorization.Host) == 0 {
+				plugin.rules = append(plugin.rules, createRule(pathRegex, nil, allowed, authorization, method))
+			} else {
+				for i := range authorization.Host {
+					plugin.rules = append(plugin.rules, createRule(pathRegex, hostRegex[i], allowed, authorization, method))
+				}
+			}
+		}
 	}
 
 	sort.SliceStable(plugin.rules, func(i, j int) bool {
-		return plugin.rules[i].priority < plugin.rules[j].priority
+		return plugin.rules[i].priority > plugin.rules[j].priority
 	})
 
 	return plugin, nil
+}
+
+func createRule(pathRegex, hostRegex *regexp.Regexp, allowed map[string]struct{}, authorization Authorization, method map[string]struct{}) rule {
+	return rule{
+		path:     pathRegex,
+		host:     hostRegex,
+		allowed:  allowed,
+		priority: authorization.Priority,
+		method:   method,
+	}
 }
 
 func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
