@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/traefik/traefik/v2/pkg/rules"
+	"github.com/nilskohrs/pathauth/rules"
 )
 
 // Config the plugin configuration.

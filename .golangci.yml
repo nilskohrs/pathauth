@@ -29,6 +29,10 @@ linters-settings:
 linters:
   enable-all: true
   disable:
+    - stylecheck
+    - revive
+    - gocognit
+    - gocyclo
     - gomoddirectives
     - goimports
     - interfacer # deprecated
