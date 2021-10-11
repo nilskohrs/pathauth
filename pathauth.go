@@ -5,9 +5,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
-	"sort"
 	"strings"
+
+	"github.com/gorilla/mux"
+	"github.com/traefik/traefik/v2/pkg/rules"
 )
 
 // Config the plugin configuration.
@@ -25,26 +26,10 @@ type Source struct {
 
 // Authorization is part of the plugin config.
 type Authorization struct {
-	Path     string   `json:"path,omitempty"`
-	Host     string   `json:"host,omitempty"`
+	Match    string   `json:"match,omitempty"`
 	Priority int      `json:"priority,omitempty"`
 	Allowed  []string `json:"allowed,omitempty"`
-	Method   []string `json:"method,omitempty"`
 }
-
-type rule struct {
-	path     *regexp.Regexp
-	host     *regexp.Regexp
-	allowed  map[string]struct{}
-	priority int
-	method   map[string]struct{}
-}
-
-type sourceType int8
-
-const (
-	header sourceType = iota
-)
 
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
@@ -53,13 +38,27 @@ func CreateConfig() *Config {
 
 // PathAuthorization a Traefik Authorization plugin.
 type PathAuthorization struct {
-	next       http.Handler
-	name       string
+	next   http.Handler
+	router *rules.Router
+}
+
+type roleHTTPHandler struct {
+	next    http.Handler
+	allowed map[string]struct{}
+	*source
+}
+
+type source struct {
 	sourceType sourceType
 	sourceName string
 	delimiter  string
-	rules      []rule
 }
+
+type sourceType int8
+
+const (
+	header sourceType = iota
+)
 
 // New creates a new CookieStrip plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
@@ -69,89 +68,59 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	if config.Source.Name == "" {
 		return nil, fmt.Errorf("missing source name")
 	}
+	router, err := rules.NewRouter()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create router")
+	}
 
-	plugin := &PathAuthorization{
+	s := source{
 		sourceType: header,
 		sourceName: config.Source.Name,
 		delimiter:  config.Source.Delimiter,
-		next:       next,
-		name:       name,
-		rules:      []rule{},
 	}
 
 	for _, authorization := range config.Authorization {
-		if authorization.Path == "" {
-			return nil, fmt.Errorf("a authorization rule is missing a path")
-		}
 		if len(authorization.Allowed) == 0 {
 			return nil, fmt.Errorf("a authorization rule has not specified who is allowed")
 		}
-		var host *regexp.Regexp
-		if authorization.Host != "" {
-			host = regexp.MustCompile(authorization.Host)
+		handler := &roleHTTPHandler{
+			next:    next,
+			allowed: asMapStruct(authorization.Allowed, false),
+			source:  &s,
 		}
-		plugin.rules = append(plugin.rules, rule{
-			path:     regexp.MustCompile(authorization.Path),
-			host:     host,
-			allowed:  asMapStruct(authorization.Allowed, false),
-			priority: authorization.Priority,
-			method:   asMapStruct(authorization.Method, true),
-		})
+
+		err := router.AddRoute(authorization.Match, authorization.Priority, handler)
+		if err != nil {
+			return nil, fmt.Errorf("failed setting up rule: %w", err)
+		}
 	}
+	router.SortRoutes()
 
-	sort.SliceStable(plugin.rules, func(i, j int) bool {
-		return plugin.rules[i].priority < plugin.rules[j].priority
-	})
-
-	return plugin, nil
+	return &PathAuthorization{
+		next:   next,
+		router: router,
+	}, nil
 }
 
 func (c *PathAuthorization) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	rm := &mux.RouteMatch{}
+	if c.router.Match(req, rm) {
+		rm.Handler.ServeHTTP(rw, req)
+	} else {
+		c.next.ServeHTTP(rw, req)
+	}
+}
+
+func (c *roleHTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	roles := c.getRolesFromHeader(req.Header)
-	hostname := hostname(req)
-	for _, rule := range c.rules {
-		if _, ok := rule.method[req.Method]; (len(rule.method) == 0 || ok) && rule.path.MatchString(req.URL.Path) && (rule.host == nil || rule.host.MatchString(hostname)) {
-			if !anyIn(roles, rule.allowed) {
-				reject(rw)
-				return
-			}
-			break
-		}
-	}
-	c.next.ServeHTTP(rw, req)
-}
-
-func hostname(req *http.Request) (host string) {
-	host = req.Host
-	colon := strings.LastIndexByte(host, ':')
-	if colon != -1 {
-		host = host[:colon]
-	}
-
-	if strings.HasPrefix(host, "[") && strings.HasSuffix(host, "]") {
-		host = host[1 : len(host)-1]
-	}
-	return
-}
-
-func reject(rw http.ResponseWriter) {
-	rw.WriteHeader(http.StatusForbidden)
-	_, err := rw.Write([]byte(http.StatusText(http.StatusForbidden)))
-	if err != nil {
-		fmt.Printf("unexpected error while writing statuscode: %v", err)
+	if anyIn(roles, c.allowed) {
+		c.next.ServeHTTP(rw, req)
+	} else {
+		reject(rw)
 	}
 }
 
-func anyIn(roles []string, allowed map[string]struct{}) (ok bool) {
-	for _, role := range roles {
-		if _, ok = allowed[role]; ok {
-			return
-		}
-	}
-	return
-}
-
-func (c *PathAuthorization) getRolesFromHeader(headers http.Header) []string {
+func (c *roleHTTPHandler) getRolesFromHeader(headers http.Header) []string {
 	rawRoles := headers.Values(c.sourceName)
 	var roles []string
 	for _, rawRole := range rawRoles {
@@ -173,4 +142,21 @@ func asMapStruct(stringSlice []string, toUpper bool) map[string]struct{} {
 		set[s] = struct{}{}
 	}
 	return set
+}
+
+func reject(rw http.ResponseWriter) {
+	rw.WriteHeader(http.StatusForbidden)
+	_, err := rw.Write([]byte(http.StatusText(http.StatusForbidden)))
+	if err != nil {
+		fmt.Printf("unexpected error while writing statuscode: %v", err)
+	}
+}
+
+func anyIn(roles []string, allowed map[string]struct{}) (ok bool) {
+	for _, role := range roles {
+		if _, ok = allowed[role]; ok {
+			return
+		}
+	}
+	return
 }

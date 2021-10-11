@@ -16,17 +16,15 @@ func TestShouldAllowUser(t *testing.T) {
 	cfg.Source.Delimiter = ","
 
 	cfg.Authorization = append(cfg.Authorization, pathauth.Authorization{
-		Path:     ".*/admin/.*",
-		Priority: 1,
+		Match:    "PathPrefix(`/{.*}/admin`)",
+		Priority: 0,
 		Allowed:  []string{"admin"},
 	})
 
 	cfg.Authorization = append(cfg.Authorization, pathauth.Authorization{
-		Path:     ".*/admin/health",
-		Host:     "localhost",
+		Match:    "Path(`/{.*}/admin/health`)",
 		Priority: 0,
 		Allowed:  []string{"monitoring"},
-		Method:   []string{"Get"},
 	})
 
 	ctx := context.Background()
@@ -39,7 +37,7 @@ func TestShouldAllowUser(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost/admin/health", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost/app/admin/health", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
