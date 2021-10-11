@@ -8,8 +8,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+	"github.com/nilskohrs/pathauth/ip"
 	"github.com/nilskohrs/pathauth/predicate"
-	"github.com/traefik/traefik/v2/pkg/ip"
 )
 
 var funcs = map[string]func(*mux.Route, ...string) error{ //nolint:gochecknoglobals

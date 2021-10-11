@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.7.3
-	github.com/traefik/traefik/v2 v2.5.3
 )
 
 exclude (
